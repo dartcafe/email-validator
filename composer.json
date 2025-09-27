@@ -4,6 +4,18 @@
   "version": "0.1.0",
   "type": "library",
   "license": "MIT",
+  "keywords": [
+    "email",
+    "validator",
+    "mx",
+    "dns",
+    "openapi",
+    "php"
+  ],
+  "support": {
+    "issues": "https://github.com/dartcafe/email-validator/issues",
+    "source": "https://github.com/dartcafe/email-validator"
+  },
   "autoload": {
     "psr-4": {
       "Dartcafe\\EmailValidator\\": "src/"
