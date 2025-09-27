@@ -1,0 +1,4 @@
+# A match will just be reported in the list response when list is configured as allow
+# Configure in lists.ini
+# one email address per line (case-insensitive)
+vip.customer@example.com

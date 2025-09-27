@@ -1,0 +1,56 @@
+{
+  "name": "dartcafe/email-validator",
+  "description": "Lightweight email address validation library with optional REST API.",
+  "version": "1.0.0",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Dartcafe\\EmailValidator\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "classmap": [
+      "docs/"
+    ]
+  },
+  "require": {
+    "php": ">=8.1"
+  },
+  "suggest": {
+    "ext-intl": "IDN normalization for internationalized domains"
+  },
+  "require-dev": {
+    "ext-intl": "*",
+    "friendsofphp/php-cs-fixer": "^3.68",
+    "phpunit/phpunit": "^10.5",
+    "symfony/yaml": "^6.4 || ^7.0",
+    "vimeo/psalm": "^5.25",
+    "zircote/swagger-php": "^4",
+    "psalm/plugin-phpunit": "^0.19.0"
+  },
+  "scripts": {
+    "serve": "php -S 0.0.0.0:8080 -t public",
+    "stop": "pkill -f 'php -S .*:8080' || true",
+    "restart": [
+      "@stop",
+      "@serve"
+    ],
+    "test": "composer dump-autoload -o && phpunit -c phpunit.xml.dist",
+    "cs": "php-cs-fixer fix --diff --dry-run --verbose",
+    "cs:fix": "php-cs-fixer fix",
+    "psalm": "psalm",
+    "swagger-ui:fetch": [
+      "@php -r \"if(!is_dir('public/vendor/swagger-ui')) mkdir('public/vendor/swagger-ui', 0777, true);\"",
+      "bash -lc 'SWAGGER_UI_VERSION=5.11.0; curl -L https://registry.npmjs.org/swagger-ui-dist/-/swagger-ui-dist-$SWAGGER_UI_VERSION.tgz | tar -xz --strip-components=1 -C public/vendor/swagger-ui'"
+    ],
+    "openapi:generate": "vendor/bin/openapi --bootstrap vendor/autoload.php --format json --output public/openapi.json docs",
+    "openapi:generate:yaml": "vendor/bin/openapi --bootstrap vendor/autoload.php --format yaml --output public/openapi.yaml docs",
+    "post-install-cmd": [
+      "@openapi:generate"
+    ],
+    "post-update-cmd": [
+      "@openapi:generate"
+    ]
+  }
+}

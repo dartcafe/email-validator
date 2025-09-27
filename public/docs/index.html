@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Email Validator API Docs</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="stylesheet" href="/vendor/swagger-ui/swagger-ui.css"/>
+  <style>body{margin:0}.topbar{display:none}</style>
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="/vendor/swagger-ui/swagger-ui-bundle.js"></script>
+<script src="/vendor/swagger-ui/swagger-ui-standalone-preset.js"></script>
+<script>
+  // Use current origin so it works behind proxies, different ports, etc.
+  const specUrl = (location.origin || '') + '/openapi.json'
+
+  window.ui = SwaggerUIBundle({
+    url: specUrl,
+    dom_id: '#swagger-ui',
+    layout: 'StandaloneLayout',
+    deepLinking: true,
+
+    /* Expand operations + nested models so the important parts are visible */
+    docExpansion: 'full',            // expand all operations (GET/POST /validate opened)
+    defaultModelsExpandDepth: 1,     // show "Schemas" and open the first level
+    defaultModelExpandDepth: 5,      // expand model properties several levels deep
+
+    displayRequestDuration: true,
+    showExtensions: true,
+    tryItOutEnabled: true,           // enables “Try it out” by default buttons
+
+    presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset]
+  })
+</script>
+</body>
+</html>
