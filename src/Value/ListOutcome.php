@@ -12,7 +12,7 @@ final class ListOutcome implements \JsonSerializable
     /**
      * @param string      $name         listName
      * @param string      $humanName    display
-     * @param string      $typ          'allow' | 'deny'
+     * @param string      $type         'allow' | 'deny'
      * @param string      $checkType    'domain' | 'address'
      * @param bool        $matched      did it match?
      * @param ?string     $matchedValue which value matched (domain/address)
@@ -20,7 +20,7 @@ final class ListOutcome implements \JsonSerializable
     public function __construct(
         public readonly string $name,
         public readonly string $humanName,
-        public readonly string $typ,
+        public readonly string $type,
         public readonly string $checkType,
         public readonly bool $matched,
         public readonly ?string $matchedValue = null,
@@ -31,7 +31,7 @@ final class ListOutcome implements \JsonSerializable
      * @return array{
      *   name: string,
      *   humanName: string,
-     *   typ: string,
+     *   type: string,
      *   checkType: string,
      *   matched: bool,
      *   matchedValue: ?string
@@ -42,7 +42,7 @@ final class ListOutcome implements \JsonSerializable
         return [
             'name'         => $this->name,
             'humanName'    => $this->humanName,
-            'typ'          => $this->typ,
+            'type'         => $this->type,
             'checkType'    => $this->checkType,
             'matched'      => $this->matched,
             'matchedValue' => $this->matchedValue,

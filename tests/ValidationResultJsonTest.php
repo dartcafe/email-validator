@@ -31,12 +31,29 @@ final class ValidationResultJsonTest extends TestCase
 
         /** @var array{
          *   query: ?string,
-         *   corrections: array{normalized:?string,suggestion:?string},
-         *   simpleResults: array{formatValid:bool,isSendable:bool,hasWarnings:bool},
+         *   corrections: array{
+         *      normalized:?string,
+         *      suggestion:?string
+         *   },
+         *   simpleResults: array{
+         *      formatValid:bool,
+         *      isSendable:bool,
+         *      hasWarnings:bool
+         *   },
          *   reasons: list<string>,
          *   warnings: list<string>,
-         *   dns: array{domainExists:?bool,hasMx:?bool},
-         *   lists: list<array{name:string,humanName:string,typ:string,checkType:string,matched:bool,matchedValue:?string}>
+         *   dns: array{
+         *      domainExists:?bool,
+         *      hasMx:?bool
+         *   },
+         *   lists: list<array{
+         *      name:string,
+         *      humanName:string,
+         *      type:string,
+         *      checkType:string,
+         *      matched:bool,
+         *      matchedValue:?string
+         *   }>
          * } $data
          */
 

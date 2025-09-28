@@ -98,7 +98,7 @@ final class TextListChecker implements ListChecker
         return new ListOutcome(
             $this->cfg->listName,
             $this->cfg->humanName,
-            $this->cfg->typ,
+            $this->cfg->type,
             $this->cfg->checkType,
             $matched,
             $matchedValue,

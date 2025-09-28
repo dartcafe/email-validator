@@ -89,7 +89,7 @@ final class ListValidationTest extends TestCase
 
         $ini = $this->createIni([
             'deny_disposable' => [
-                'typ'          => 'deny',
+                'type'         => 'deny',
                 'listFileName' => '"' . $disposable . '"',
                 'checkType'    => 'domain',
                 'listName'     => 'disposable',
@@ -112,7 +112,7 @@ final class ListValidationTest extends TestCase
         ))[0] ?? null;
         $this->assertNotNull($match);
         $this->assertTrue($match->matched);
-        $this->assertSame('deny', $match->typ);
+        $this->assertSame('deny', $match->type);
         $this->assertSame('domain', $match->checkType);
     }
 
@@ -122,7 +122,7 @@ final class ListValidationTest extends TestCase
 
         $ini = $this->createIni([
             'deny_banned' => [
-                'typ'          => 'deny',
+                'type'         => 'deny',
                 'listFileName' => '"' . $banned . '"',
                 'checkType'    => 'address',
                 'listName'     => 'banned_addresses',
@@ -145,7 +145,7 @@ final class ListValidationTest extends TestCase
 
         $ini = $this->createIni([
             'allow_vip' => [
-                'typ'          => 'allow',
+                'type'         => 'allow',
                 'listFileName' => '"' . $vip . '"',
                 'checkType'    => 'address',
                 'listName'     => 'vip',
@@ -166,7 +166,7 @@ final class ListValidationTest extends TestCase
     {
         $ini = $this->createIni([
             'deny_missing' => [
-                'typ'          => 'deny',
+                'type'         => 'deny',
                 'listFileName' => '"' . $this->tmpDir . '/blacklists/does-not-exist.txt' . '"',
                 'checkType'    => 'domain',
                 'listName'     => 'missing',
@@ -193,7 +193,7 @@ final class ListValidationTest extends TestCase
         $disposable = $this->write('blacklists/disposable.txt', "MailInator.com\n");
         $ini = $this->createIni([
             'deny_disposable' => [
-                'typ'          => 'deny',
+                'type'         => 'deny',
                 'listFileName' => '"' . $disposable . '"',
                 'checkType'    => 'domain',
                 'listName'     => 'disposable',

@@ -50,7 +50,7 @@ final class ValidatePath
                                 'lists' => [[
                                     'name'         => 'disposable',
                                     'humanName'    => 'Disposable providers',
-                                    'typ'          => 'deny',
+                                    'type'         => 'deny',
                                     'checkType'    => 'domain',
                                     'matched'      => true,
                                     'matchedValue' => 'mailinator.com',

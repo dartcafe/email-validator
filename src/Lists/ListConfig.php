@@ -7,7 +7,7 @@ namespace Dartcafe\EmailValidator\Lists;
 final class ListConfig
 /** Represents one [section] in a list INI file.
  *
- * typ         = allow|deny
+ * type         = allow|deny
  * listFile    = relative or absolute path to the list file
  * checkType   = domain|address
  * listName    = machine name (identifier)
@@ -15,11 +15,11 @@ final class ListConfig
  */
 {
     public function __construct(
-        public readonly string $typ,       // allow|deny
+        public readonly string $type,      // allow|deny
         public readonly string $listFile,  // resolved absolute/normalized path
         public readonly string $checkType, // domain|address
         public readonly string $listName,  // machine name
-        public readonly string $humanName,  // display
+        public readonly string $humanName, // display
     ) {
     }
 
@@ -38,16 +38,16 @@ final class ListConfig
         $out = [];
 
         foreach ($sections as $data) {
-            $typ       = \strtolower((string)($data['typ'] ?? ''));
+            $type      = \strtolower((string)($data['type'] ?? ''));
             $rawFile   = (string)($data['listFileName'] ?? '');
             $checkType = \strtolower((string)($data['checkType'] ?? ''));
             $listName  = (string)($data['listName'] ?? '');
             $humanName = (string)($data['humanName'] ?? '');
 
-            if ($typ === '' || $rawFile === '' || $checkType === '' || $listName === '' || $humanName === '') {
+            if ($type === '' || $rawFile === '' || $checkType === '' || $listName === '' || $humanName === '') {
                 continue;
             }
-            if (!\in_array($typ, ['allow','deny'], true)) {
+            if (!\in_array($type, ['allow','deny'], true)) {
                 continue;
             }
             if (!\in_array($checkType, ['domain','address'], true)) {
@@ -55,7 +55,7 @@ final class ListConfig
             }
 
             $resolved = self::resolvePath($baseDir, $rawFile);
-            $out[] = new self($typ, $resolved, $checkType, $listName, $humanName);
+            $out[] = new self($type, $resolved, $checkType, $listName, $humanName);
         }
 
         return $out;

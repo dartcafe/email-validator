@@ -46,11 +46,11 @@ final class Warning
     schema: 'ListOutcome',
     type: 'object',
     description: 'Outcome for a single configured list.',
-    required: ['name','humanName','typ','checkType','matched'],
+    required: ['name','humanName','type','checkType','matched'],
     properties: [
         new OA\Property(property: 'name', type: 'string', description: 'Technical list identifier'),
         new OA\Property(property: 'humanName', type: 'string', description: 'Display name'),
-        new OA\Property(property: 'typ', type: 'string', enum: ['allow','deny']),
+        new OA\Property(property: 'type', type: 'string', enum: ['allow','deny']),
         new OA\Property(property: 'checkType', type: 'string', enum: ['domain','address']),
         new OA\Property(property: 'matched', type: 'boolean'),
         new OA\Property(property: 'matchedValue', type: 'string', nullable: true, description: 'Matched domain or address'),

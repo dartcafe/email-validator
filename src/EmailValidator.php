@@ -105,7 +105,7 @@ final class EmailValidator implements IValidator
             $lists = $this->lists->evaluate(strtolower($normalized), $normalizedDomain);
             $result->setLists($lists);
             foreach ($lists as $o) {
-                if ($o->typ === 'deny' && $o->matched) {
+                if ($o->type === 'deny' && $o->matched) {
                     $result->addWarning('deny_list:' . $o->name);
                 }
             }

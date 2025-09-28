@@ -79,7 +79,7 @@ if ($result->isValid()) {
     {
       "name": "deny_disposable",
       "humanName": "Disposable domains",
-      "typ": "deny",
+      "type": "deny",
       "checkType": "domain",
       "matched": false,
       "matchedValue": null
@@ -102,14 +102,14 @@ You can maintain lists in plain text files (one entry per line; `#` for comments
 **`config/lists.ini`**
 ```ini
 [deny_disposable]
-typ = "deny"
+type = "deny"
 listFileName = "lists/disposable_domains.txt"
 checkType = "domain"
 listName = "deny_disposable"
 humanName = "Disposable domains"
 
 [allow_vip_customers]
-typ = "allow"
+type = "allow"
 listFileName = "lists/vip_addresses.txt"
 checkType = "address"
 listName = "allow_vip"
