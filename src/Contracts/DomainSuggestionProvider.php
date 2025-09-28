@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dartcafe\EmailValidator\Contracts;
 
-interface IDomainSuggestionProvider
+interface DomainSuggestionProvider
 {
     /**
      * Suggest a replacement domain for a possibly misspelled domain.

@@ -6,7 +6,7 @@ namespace Dartcafe\EmailValidator\Contracts;
 
 use Dartcafe\EmailValidator\Value\ValidationResult;
 
-interface IValidator
+interface Validator
 {
     /**
      * Validates an email address and returns a structured result.

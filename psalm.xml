@@ -18,6 +18,13 @@
             <directory name="vendor"/>
         </ignoreFiles>
     </projectFiles>
+    <issueHandlers>
+        <RiskyTruthyFalsyComparison>
+            <errorLevel type="info">
+                <directory name="src"/>
+            </errorLevel>
+        </RiskyTruthyFalsyComparison>
+    </issueHandlers>
     <plugins>
         <pluginClass xmlns="https://getpsalm.org/schema/config" class="Psalm\PhpUnitPlugin\Plugin"/>
     </plugins>

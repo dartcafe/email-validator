@@ -1,18 +1,19 @@
 # Email Validator for PHP
 
 Robust email validation for modern PHP.
-The **Email Validator** separates **format validity** from **deliverability** and lets you plug in **deny/allow lists** and **domain typo suggestions**. A minimal REST endpoint and OpenAPI spec are included for quick integrations.
+
+The **Email Validator** separates **format validity** from **deliverability**, supports **domain typo suggestions**, and lets you plug in custom **providers** for lists and DNS. File/INI list handling is offered via a small adapter.
 
 ---
 
-## Features
+# Features
 
-- **Format-only validity** (`valid`) — strict checks incl. length and basic domain shape.
-- **Deliverability prediction** (`sendable`) — DNS lookup: domain existence + MX records.
-- **Domain typo suggestions** — configurable provider with a default list.
-- **Configurable lists** — allow/deny checks against plain text files (by domain or full address).
-- **Clear result model** — machine-friendly JSON with reasons/warnings + getters for PHP.
-- **OpenAPI 3** — generated spec; optional Swagger UI.
+- **Format-only validity** (`valid`) — syntax & RFC length checks plus basic domain shape.
+- **Deliverability prediction** (`sendable`) — DNS: domain existence + MX records (via pluggable resolver).
+- **Domain typo suggestions** — configurable provider with a sensible default list.
+- **Pluggable list checks** — allow/deny by domain or full address via a `ListProvider`.
+- **Clear result model** — typed getters for PHP and compact JSON for APIs.
+- **OpenAPI 3** — attribute-based spec; optional Swagger UI in the demo.
 - **PHP 8.1+**, Psalm-typed, PHPUnit-tested, PSR-12 styled.
 
 ---
@@ -27,32 +28,34 @@ composer require dartcafe/email-validator
 
 ---
 
-## Quick start
+## Quick start (with INI + text files)
+
+The core is file-system agnostic. If you want INI + text files, use the included adapter.
 
 ```php
 <?php
 
 use Dartcafe\EmailValidator\EmailValidator;
-use Dartcafe\EmailValidator\Lists\ListManager;
+use Dartcafe\EmailValidator\Adapter\IniListProvider;
 
-// Optional: load allow/deny lists from an INI file
+// Optional: lists via INI + text files (one value per line)
 $lists = is_file(__DIR__ . '/config/lists.ini')
-    ? ListManager::fromIni(__DIR__ . '/config/lists.ini')
+    ? IniListProvider::fromFile(__DIR__ . '/config/lists.ini')
     : null;
 
-// Create the validator (default domain suggestions are included)
+// Create validator (default typo suggestions included)
 $validator = new EmailValidator(lists: $lists);
 
 // Validate
 $result = $validator->validate('User+tag@Straße.de');
 
-// Work with the result (typed getters)
+// Work with the result
 if ($result->isValid()) {
-    $sendable  = $result->isSendable();     // DNS + MX OK?
-    $normalized = $result->getNormalized(); // normalized local@ascii-domain (lowercased domain)
-    $suggestion = $result->getSuggestion(); // recommended correction (if any)
-    $reasons    = $result->getReasons();    // format/DNS reasons (if any)
-    $warnings   = $result->getWarnings();   // non-fatal warnings (e.g. deny-list hits)
+    $sendable   = $result->isSendable();   // DNS + MX OK?
+    $normalized = $result->getNormalized(); // local@ascii-domain (domain lowercased)
+    $suggestion = $result->getSuggestion(); // correction (if any)
+    $reasons    = $result->getReasons();    // format/DNS reasons
+    $warnings   = $result->getWarnings();   // e.g. deny-list hits
 }
 ```
 
@@ -89,15 +92,13 @@ if ($result->isValid()) {
 ```
 
 > **Terminology**
-> - `valid` — only about **syntax/format** (RFC length constraints, basic domain shape).
-> - `sendable` — **format OK** *and* **DNS suggests deliverability** (domain exists & MX present).
-> - `warnings` — informational (e.g. matched deny-list) and do **not** change `sendable`.
+> - `valid` — only the **syntax/format** aspect.
+> - `sendable` — format OK **and** DNS suggests deliverability (domain exists & MX present).
+> - `warnings` — informative (e.g. deny-list hit); they do **not** flip `sendable`.
 
 ---
 
-## Lists (allow/deny) via INI + text files
-
-You can maintain lists in plain text files (one entry per line; `#` for comments) and wire them up in an INI file.
+## Lists via INI + text files
 
 **`config/lists.ini`**
 ```ini
@@ -125,29 +126,51 @@ tempmail.org
 
 **`config/lists/vip_addresses.txt`**
 ```
+# one address per line (case-insensitive)
 vip.customer@example.com
 ceo@example.com
 ```
 
-Load them with:
+Load with:
 
 ```php
-use Dartcafe\EmailValidator\Lists\ListManager;
+use Dartcafe\EmailValidator\Adapter\IniListProvider;
 
-$lists = ListManager::fromIni(__DIR__ . '/config/lists.ini');
-$validator = new Dartcafe\EmailValidator\EmailValidator(lists: $lists);
+$lists = IniListProvider::fromFile(__DIR__ . '/config/lists.ini');
+$validator = new EmailValidator(lists: $lists);
 ```
 
-Each list contributes a **ListOutcome** entry to `ValidationResult::getLists()`.
-If a `deny` list matches, a **warning** like `deny_list:<name>` is added (it does not flip `sendable` by default).
+Each configured section becomes a `ListOutcome` in the result. If a **deny** list matches, a warning like `deny_list:<name>` is added (informational by default).
 
 ---
 
-## Domain suggestions
+## Pluggable providers (advanced)
 
-A simple text-based provider ships as default (common mailbox providers & typos).
-You can provide your own by implementing:
+The validator depends on minimal contracts so you can swap implementations easily.
 
+### ListProvider
+```php
+namespace Dartcafe\EmailValidator\Contracts;
+
+use Dartcafe\EmailValidator\Value\ListOutcome;
+
+interface ListProvider {
+    /** @return list<ListOutcome> */
+    public function evaluate(string $normalizedAddress, string $normalizedDomain): array;
+}
+```
+
+### DnsResolver
+```php
+namespace Dartcafe\EmailValidator\Contracts;
+
+/** @return array{0:?bool, 1:?bool} [domainExists, hasMx] */
+interface DnsResolver {
+    public function check(string $asciiLowerDomain): array;
+}
+```
+
+### DomainSuggestionProvider
 ```php
 namespace Dartcafe\EmailValidator\Contracts;
 
@@ -156,50 +179,40 @@ interface DomainSuggestionProvider {
 }
 ```
 
-Pass your provider into the constructor:
+Provide your own implementations and pass them into the constructor:
 
 ```php
-$validator = new EmailValidator($mySuggestionProvider, $lists);
+$validator = new EmailValidator(
+    suggestions: $mySuggestions,      // implements DomainSuggestionProvider
+    lists:       $myListProvider,     // implements ListProvider
+    dns:         $myDnsResolver       // implements DnsResolver
+);
 ```
+
+A default DNS resolver and a default suggestion provider ship with the library.
 
 ---
 
-## REST endpoint & OpenAPI
+## REST & OpenAPI
 
-The package includes OpenAPI attribute definitions (`docs/`) and a generator script can produce `public/openapi.json`.
-A minimal demo app with a UI and import/export of lists lives in the companion project (see below).
-
-Generate the spec:
+The repo includes OpenAPI attribute definitions (`docs/`) to generate `public/openapi.json`. Example:
 
 ```bash
-# if you have zircote/swagger-php installed (dev)
 vendor/bin/openapi --bootstrap vendor/autoload.php --format json --output public/openapi.json docs
 ```
 
-Endpoints (as defined in the spec):
+Endpoints in the spec:
 - `POST /validate` — `{ "email": "user@example.com" }`
 - `GET  /validate?email=user@example.com`
 
-> If you prefer a ready-to-run server + UI, use the **demo** project below.
-
----
-
-## Demo (optional)
-
-A separate demo app provides:
-- a pretty **checklist UI** for results,
-- a **lists editor** (INI + text files) with **import/export (ZIP/JSON)**,
-- and an embedded Swagger UI.
-
-Repo: `dartcafe/email-validator-demo` (coming soon).
+A separate demo app (UI + lists editor + Swagger UI) is available in a companion repository.
 
 ---
 
 ## Development
 
-### Scripts
 ```bash
-# coding standards (dry-run / fix)
+# coding standards
 composer cs
 composer cs:fix
 
@@ -209,9 +222,6 @@ vendor/bin/psalm --no-cache
 # tests
 composer test
 ```
-
-### Contributing
-PRs and issues are welcome. Please run CS, Psalm, and tests before submitting.
 
 ---
 

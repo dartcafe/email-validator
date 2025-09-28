@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Dartcafe\EmailValidator\Contracts\IDomainSuggestionProvider;
+use Dartcafe\EmailValidator\Contracts\DomainSuggestionProvider;
 use Dartcafe\EmailValidator\EmailValidator;
 use PHPUnit\Framework\TestCase;
 
@@ -32,7 +32,7 @@ final class EmailValidatorFormatTest extends TestCase
     public function testSuggestionFromProvider(): void
     {
         // Stub suggestion provider: yaho.com -> yahoo.com
-        $provider = new class () implements IDomainSuggestionProvider {
+        $provider = new class () implements DomainSuggestionProvider {
             public function suggestDomain(string $domain): ?string
             {
                 return $domain === 'yaho.com' ? 'yahoo.com' : null;
