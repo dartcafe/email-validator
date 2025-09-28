@@ -10,19 +10,20 @@ namespace Dartcafe\EmailValidator\Value;
  * @psalm-type Reason = string         // syntax/domain/DNS related
  * @psalm-type Warning = string        // non-fatal (e.g., deny_list:<name>)
  */
-final class ValidationResult implements \JsonSerializable
-/**
- * @property ?string $query              original queried email address (trimmed)
- * @property bool $valid                 format-only validity
- * @property bool $sendable              deliverability prediction
- * @property list<Reason> $reasons       reasons for invalidity or non-deliverability
- * @property list<Warning> $warnings     non-fatal issues
- * @property ?string $normalized         normalized email address (lowercased, trimmed, IDN to ASCII)
- * @property ?string $suggestion         suggestion for corrected email address (if any)
- * @property ?bool $domainExists         True if the domain exists, false if not, null if not checked
- * @property ?bool $hasMx                True if the domain has MX records, false if not, null if not checked
- * @property list<ListOutcome> $lists    list evaluation outcomes
- */
+final class ValidationResult implements
+    \JsonSerializable
+    /**
+     * @property ?string $query              original queried email address (trimmed)
+     * @property bool $valid                 format-only validity
+     * @property bool $sendable              deliverability prediction
+     * @property list<Reason> $reasons       reasons for invalidity or non-deliverability
+     * @property list<Warning> $warnings     non-fatal issues
+     * @property ?string $normalized         normalized email address (lowercased, trimmed, IDN to ASCII)
+     * @property ?string $suggestion         suggestion for corrected email address (if any)
+     * @property ?bool $domainExists         True if the domain exists, false if not, null if not checked
+     * @property ?bool $hasMx                True if the domain has MX records, false if not, null if not checked
+     * @property list<ListOutcome> $lists    list evaluation outcomes
+     */
 {
     private ?string $query = null;
     private bool $valid = false;
