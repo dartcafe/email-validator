@@ -6,6 +6,23 @@ namespace Dartcafe\EmailValidator\Suggestion;
 
 use Dartcafe\EmailValidator\Contracts\IDomainSuggestionProvider;
 
+/**
+ * Suggestion provider based on a simple text file with "typo,correct" lines.
+ *
+ * Lines starting with '#' are comments and ignored.
+ * Inline comments (after '#') are also ignored.
+ * Blank lines are ignored.
+ *
+ * Example content:
+ * ```
+ * # common typos
+ * gmal.com, gmail.com
+ * hotmial.com, hotmail.com
+ * yaho.com, yahoo.com
+ * ```
+ *
+ * Domains are case-insensitive and always lowercased internally.
+ */
 final class TextDomainSuggestionProvider implements IDomainSuggestionProvider
 {
     /** @var array<string,string> */
@@ -19,12 +36,22 @@ final class TextDomainSuggestionProvider implements IDomainSuggestionProvider
         $this->map = $map;
     }
 
+    /**
+     * Load the default suggestion list from the built-in resource file.
+     * @return self
+     */
     public static function default(): self
     {
         $path = __DIR__ . '/../resources/domain_suggestions.txt';
         return self::fromFile($path);
     }
 
+    /**
+     * Load suggestion map from a text file.
+     *
+     * @param string $path Path to the suggestion file
+     * @return self
+     */
     public static function fromFile(string $path): self
     {
         $map = [];
@@ -78,6 +105,12 @@ final class TextDomainSuggestionProvider implements IDomainSuggestionProvider
         return new self($map);
     }
 
+    /**
+     * Suggest a correction for the given domain, or null if no suggestion.
+     *
+     * @param string $domain Lowercased, IDNA-ASCII domain (may be empty)
+     * @return null|string Suggested replacement domain (lowercased, IDNA-ASCII)
+     */
     public function suggestDomain(string $domain): ?string
     {
         // inputs are assumed lowercased; normalize just in case

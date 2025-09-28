@@ -10,6 +10,7 @@ interface ListChecker
 {
     /**
      * Evaluate this list for the given normalized inputs.
+     *
      * @param string $normalizedAddress lowercased, IDNA-ASCII domain part
      * @param string $normalizedDomain  lowercased, IDNA-ASCII
      * @return ListOutcome

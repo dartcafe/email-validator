@@ -17,6 +17,9 @@ final class TextListChecker implements ListChecker
     /** @var array<string, true> */
     private array $set;
 
+    /**
+     * @param ListConfig $cfg Configuration for this list
+     */
     public function __construct(ListConfig $cfg)
     {
         $this->cfg = $cfg;
@@ -24,6 +27,14 @@ final class TextListChecker implements ListChecker
     }
 
     /**
+     * Load the list file into a set (associative array for O(1) lookups).
+     * Lines starting with # are comments and ignored.
+     * Empty lines are ignored.
+     * Lines are trimmed and lowercased.
+     * Entries are keys in the returned array with value true.
+     * If the file cannot be read, an empty set is returned.
+     *
+     * @param string $path
      * @return array<string,true>
      */
     private function loadFile(string $path): array
@@ -60,6 +71,12 @@ final class TextListChecker implements ListChecker
         return $set;
     }
 
+    /** Evaluate the given normalized address and domain against the list.
+     *
+     * @param string $normalizedAddress Lowercased full email address
+     * @param string $normalizedDomain Lowercased IDNA ASCII domain
+     * @return ListOutcome
+     */
     public function evaluate(string $normalizedAddress, string $normalizedDomain): ListOutcome
     {
         $matched = false;

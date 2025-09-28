@@ -22,6 +22,12 @@ final class ListManager
         $this->checkers = $checkers;
     }
 
+    /**
+     * Load list configurations from an INI file and create a ListManager with corresponding checkers.
+     *
+     * @param string $iniPath Path to the INI configuration file
+     * @return self
+     */
     public static function fromIni(string $iniPath): self
     {
         $configs = ListConfig::fromIni($iniPath);
@@ -33,6 +39,10 @@ final class ListManager
     }
 
     /**
+     * Evaluate all lists against the given normalized email address and domain.
+     *
+     * @param string $normalizedAddress Full normalized email address (lowercased)
+     * @param string $normalizedDomain  Normalized domain part (lowercased)
      * @return list<ListOutcome> $out
      */
     public function evaluate(string $normalizedAddress, string $normalizedDomain): array

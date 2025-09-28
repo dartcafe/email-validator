@@ -5,6 +5,14 @@ declare(strict_types=1);
 namespace Dartcafe\EmailValidator\Lists;
 
 final class ListConfig
+/** Represents one [section] in a list INI file.
+ *
+ * typ         = allow|deny
+ * listFile    = relative or absolute path to the list file
+ * checkType   = domain|address
+ * listName    = machine name (identifier)
+ * humanName   = display name
+ */
 {
     public function __construct(
         public readonly string $typ,       // allow|deny
