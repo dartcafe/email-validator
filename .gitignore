@@ -1,6 +1,7 @@
 # Composer
 /vendor/
 **/vendor/
+composer.lock
 
 # PHPUnit / Coverage
 /.phpunit.result.cache
