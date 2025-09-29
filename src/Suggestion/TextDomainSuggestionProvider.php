@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dartcafe\EmailValidator\Suggestion;
 
-use Dartcafe\EmailValidator\Contracts\IDomainSuggestionProvider;
+use Dartcafe\EmailValidator\Contracts\DomainSuggestionProvider;
 
 /**
  * Suggestion provider based on a simple text file with "typo,correct" lines.
@@ -23,7 +23,7 @@ use Dartcafe\EmailValidator\Contracts\IDomainSuggestionProvider;
  *
  * Domains are case-insensitive and always lowercased internally.
  */
-final class TextDomainSuggestionProvider implements IDomainSuggestionProvider
+final class TextDomainSuggestionProvider implements DomainSuggestionProvider
 {
     /** @var array<string,string> */
     private array $map;

@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace Dartcafe\EmailValidator;
 
-use Dartcafe\EmailValidator\Contracts\IDomainSuggestionProvider;
-use Dartcafe\EmailValidator\Contracts\IValidator;
-use Dartcafe\EmailValidator\Lists\ListManager;
+use Dartcafe\EmailValidator\Contracts\DnsResolver;
+use Dartcafe\EmailValidator\Contracts\DomainSuggestionProvider;
+use Dartcafe\EmailValidator\Contracts\ListProvider;
+use Dartcafe\EmailValidator\Contracts\Validator;
+use Dartcafe\EmailValidator\Dns\DefaultDnsResolver;
 use Dartcafe\EmailValidator\Suggestion\TextDomainSuggestionProvider;
 use Dartcafe\EmailValidator\Value\ValidationResult;
 
-final class EmailValidator implements IValidator
+final class EmailValidator implements Validator
 {
-    private IDomainSuggestionProvider $suggestions;
-    private ?ListManager $lists;
+    private DomainSuggestionProvider $suggestions;
+    private ?ListProvider $lists;
+    private DnsResolver $dns;
 
     public function __construct(
-        ?IDomainSuggestionProvider $suggestions = null,
-        ?ListManager $lists = null,
+        ?DomainSuggestionProvider $suggestions = null,
+        ?ListProvider $lists = null,
+        ?DnsResolver $dns = null,
     ) {
         $this->suggestions = $suggestions ?? TextDomainSuggestionProvider::default();
-        $this->lists = $lists;
+        $this->lists       = $lists;
+        $this->dns         = $dns ?? new DefaultDnsResolver();
     }
 
     public function validate(string $emailAddress): ValidationResult
@@ -91,13 +96,23 @@ final class EmailValidator implements IValidator
         }
 
         // Deliverability (DNS)
-        [$domainExists, $hasMx] = $this->checkDns($normalizedDomain);
+        [$domainExists, $hasMx] = $this->dns->check($normalizedDomain);
         $result->setDns($domainExists, $hasMx);
 
         if ($domainExists === false) {
             $result->addReason('domain_not_found');
         } elseif ($hasMx === false) {
             $result->addReason('no_mx');
+        }
+
+        if ($this->lists !== null) {
+            $lists = $this->lists->evaluate(strtolower($normalized), $normalizedDomain);
+            $result->setLists($lists);
+            foreach ($lists as $o) {
+                if ($o->type === 'deny' && $o->matched) {
+                    $result->addWarning('deny_list:' . $o->name);
+                }
+            }
         }
 
         // Lists -> warnings (do not affect sendability)
@@ -126,20 +141,5 @@ final class EmailValidator implements IValidator
             return $ascii !== false ? $ascii : $domain;
         }
         return $domain;
-    }
-
-    /**
-     * @return array{0:?bool,1:?bool} [domainExists, hasMx]
-     */
-    private function checkDns(string $domain): array
-    {
-        $mx = @dns_get_record($domain, DNS_MX);
-        if (is_array($mx) && count($mx) > 0) {
-            return [true, true];
-        }
-        $a = @dns_get_record($domain, DNS_A);
-        $aaaa = @dns_get_record($domain, DNS_AAAA);
-        $domainExists = ((is_array($a) && $a) || (is_array($aaaa) && $aaaa)) ? true : false;
-        return [$domainExists, false];
     }
 }

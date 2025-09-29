@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
+use Dartcafe\EmailValidator\Adapter\IniListProvider;
 use Dartcafe\EmailValidator\EmailValidator;
-use Dartcafe\EmailValidator\Lists\ListManager;
 use PHPUnit\Framework\TestCase;
 
 final class ListValidationTest extends TestCase
@@ -97,7 +97,7 @@ final class ListValidationTest extends TestCase
             ],
         ]);
 
-        $lists = ListManager::fromIni($ini);
+        $lists = IniListProvider::fromFile($ini);
         $v = new EmailValidator(lists: $lists);
 
         $res = $v->validate('bob@mailinator.com');
@@ -130,7 +130,7 @@ final class ListValidationTest extends TestCase
             ],
         ]);
 
-        $lists = ListManager::fromIni($ini);
+        $lists = IniListProvider::fromFile($ini);
         $v = new EmailValidator(lists: $lists);
 
         $res = $v->validate('ceo@example.com');
@@ -153,7 +153,7 @@ final class ListValidationTest extends TestCase
             ],
         ]);
 
-        $lists = ListManager::fromIni($ini);
+        $lists = IniListProvider::fromFile($ini);
         $v = new EmailValidator(lists: $lists);
 
         $res = $v->validate('vip.customer@gmail.com');
@@ -174,7 +174,7 @@ final class ListValidationTest extends TestCase
             ],
         ]);
 
-        $lists = ListManager::fromIni($ini);
+        $lists = IniListProvider::fromFile($ini);
         $v = new EmailValidator(lists: $lists);
 
         $res = $v->validate('user@example.com');
@@ -201,7 +201,7 @@ final class ListValidationTest extends TestCase
             ],
         ]);
 
-        $lists = ListManager::fromIni($ini);
+        $lists = IniListProvider::fromFile($ini);
         $v = new EmailValidator(lists: $lists);
 
         $res = $v->validate('USER@MAILINATOR.COM');
