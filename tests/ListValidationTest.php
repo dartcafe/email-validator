@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Dartcafe\EmailValidator\EmailValidator;
 use Dartcafe\EmailValidator\Adapter\IniListProvider;
+use Dartcafe\EmailValidator\EmailValidator;
 use PHPUnit\Framework\TestCase;
 
 final class ListValidationTest extends TestCase

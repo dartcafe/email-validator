@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Dartcafe\EmailValidator\Adapter;
@@ -101,21 +102,28 @@ final class IniListProvider implements ListProvider
         $out = [];
         $seen = [];
         $lines = \preg_split('~\R~', $raw);
-        if ($lines === false) { $lines = []; }
+        if ($lines === false) {
+            $lines = [];
+        }
 
         foreach ($lines as $line) {
             $line = \preg_replace('~#.*$~', '', $line) ?? $line; // strip comments
             $line = \trim($line);
-            if ($line === '') { continue; }
+            if ($line === '') {
+                continue;
+            }
             $key = \mb_strtolower($line);
-            if (isset($seen[$key])) { continue; }
+            if (isset($seen[$key])) {
+                continue;
+            }
             $seen[$key] = true;
             $out[] = $line; // keep original spelling for matchedValue
         }
 
         // stable order
-        \usort($out, static fn(string $a, string $b) =>
-            \strcasecmp($a, $b)
+        \usort(
+            $out,
+            static fn (string $a, string $b) => \strcasecmp($a, $b),
         );
 
         return $out;
@@ -156,7 +164,7 @@ final class IniListProvider implements ListProvider
                 type: $r['type'],
                 checkType: $r['checkType'],
                 matched: $matched,
-                matchedValue: $matchedValue
+                matchedValue: $matchedValue,
             );
         }
 
