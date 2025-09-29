@@ -3,7 +3,7 @@
     "info": {
         "title": "Email Validator API",
         "description": "Validates email format, predicts sendability, and warns on configured deny-lists.",
-        "version": "1.0.0"
+        "version": "0.1.1"
     },
     "servers": [
         {
@@ -11,13 +11,34 @@
         }
     ],
     "paths": {
+        "/health": {
+            "get": {
+                "tags": [
+                    "meta"
+                ],
+                "summary": "Health probe",
+                "operationId": "health",
+                "responses": {
+                    "200": {
+                        "description": "Service is alive",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/validate": {
             "get": {
                 "tags": [
-                    "Validation"
+                    "validation"
                 ],
-                "summary": "Validate an email address (query parameter)",
-                "operationId": "fed1eb5de615644922ac7a97e1eba997",
+                "summary": "Validate an email (query param)",
+                "operationId": "validateGet",
                 "parameters": [
                     {
                         "name": "email",
@@ -26,8 +47,7 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "format": "email",
-                            "example": "user@mailinator.com"
+                            "format": "email"
                         }
                     }
                 ],
@@ -37,48 +57,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/EmailValidationResponse"
-                                },
-                                "examples": {
-                                    "deny_disposable": {
-                                        "summary": "Format ok; deliverable; deny list warning",
-                                        "value": {
-                                            "query": "user@mailinator.com",
-                                            "corrections": {
-                                                "normalized": "user@mailinator.com",
-                                                "suggestion": null
-                                            },
-                                            "simpleResults": {
-                                                "formatValid": true,
-                                                "isSendable": true,
-                                                "hasWarnings": true
-                                            },
-                                            "reasons": [],
-                                            "warnings": [
-                                                "deny_list:disposable"
-                                            ],
-                                            "dns": {
-                                                "domainExists": true,
-                                                "hasMx": true
-                                            },
-                                            "lists": [
-                                                {
-                                                    "name": "disposable",
-                                                    "humanName": "Disposable providers",
-                                                    "typ": "deny",
-                                                    "checkType": "domain",
-                                                    "matched": true,
-                                                    "matchedValue": "mailinator.com"
-                                                }
-                                            ]
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/ValidationResult"
                                 }
                             }
                         }
                     },
                     "400": {
-                        "description": "Missing or invalid query parameter",
+                        "description": "Bad request",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -91,27 +76,14 @@
             },
             "post": {
                 "tags": [
-                    "Validation"
+                    "validation"
                 ],
-                "summary": "Validate an email address (request body)",
-                "operationId": "e453957c05179af85b9bf6fe1e68ca55",
+                "summary": "Validate an email (JSON body)",
+                "operationId": "validatePost",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/EmailValidationRequest"
-                            },
-                            "examples": {
-                                "simple": {
-                                    "summary": "Simple request",
-                                    "value": {
-                                        "email": "user@example.com"
-                                    }
-                                }
-                            }
-                        },
-                        "application/x-www-form-urlencoded": {
                             "schema": {
                                 "$ref": "#/components/schemas/EmailValidationRequest"
                             }
@@ -124,85 +96,13 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/EmailValidationResponse"
-                                },
-                                "examples": {
-                                    "valid_sendable": {
-                                        "summary": "Format ok and sendable",
-                                        "value": {
-                                            "query": "user@example.com",
-                                            "corrections": {
-                                                "normalized": "user@example.com",
-                                                "suggestion": null
-                                            },
-                                            "simpleResults": {
-                                                "formatValid": true,
-                                                "isSendable": true,
-                                                "hasWarnings": false
-                                            },
-                                            "reasons": [],
-                                            "warnings": [],
-                                            "dns": {
-                                                "domainExists": true,
-                                                "hasMx": true
-                                            },
-                                            "lists": []
-                                        }
-                                    },
-                                    "no_mx": {
-                                        "summary": "Format ok but not sendable (no MX)",
-                                        "value": {
-                                            "query": "user@nomx.example",
-                                            "corrections": {
-                                                "normalized": "user@nomx.example",
-                                                "suggestion": null
-                                            },
-                                            "simpleResults": {
-                                                "formatValid": true,
-                                                "isSendable": false,
-                                                "hasWarnings": false
-                                            },
-                                            "reasons": [
-                                                "no_mx"
-                                            ],
-                                            "warnings": [],
-                                            "dns": {
-                                                "domainExists": true,
-                                                "hasMx": false
-                                            },
-                                            "lists": []
-                                        }
-                                    },
-                                    "format_error": {
-                                        "summary": "Invalid format (early return)",
-                                        "value": {
-                                            "query": "user.example.com",
-                                            "corrections": {
-                                                "normalized": null,
-                                                "suggestion": null
-                                            },
-                                            "simpleResults": {
-                                                "formatValid": false,
-                                                "isSendable": false,
-                                                "hasWarnings": false
-                                            },
-                                            "reasons": [
-                                                "missing_at"
-                                            ],
-                                            "warnings": [],
-                                            "dns": {
-                                                "domainExists": null,
-                                                "hasMx": null
-                                            },
-                                            "lists": []
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/ValidationResult"
                                 }
                             }
                         }
                     },
-                    "400": {
-                        "description": "Missing or invalid input",
+                    "415": {
+                        "description": "Unsupported Media Type",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -217,203 +117,212 @@
     },
     "components": {
         "schemas": {
-            "ErrorResponse": {
-                "required": [
-                    "error"
-                ],
-                "properties": {
-                    "error": {
-                        "description": "Human-readable error message",
-                        "type": "string"
-                    }
-                },
-                "type": "object"
-            },
             "EmailValidationRequest": {
                 "required": [
                     "email"
                 ],
                 "properties": {
                     "email": {
-                        "description": "Email address to validate",
                         "type": "string",
-                        "format": "email"
+                        "format": "email",
+                        "example": "user@example.com"
                     }
                 },
-                "type": "object"
-            },
-            "Reason": {
-                "description": "Format/DNS reason codes",
-                "type": "string",
-                "enum": [
-                    "empty",
-                    "syntax",
-                    "missing_at",
-                    "local_too_long",
-                    "domain_too_long",
-                    "address_too_long",
-                    "domain_malformed",
-                    "domain_not_found",
-                    "no_mx"
-                ]
-            },
-            "Warning": {
-                "description": "Non-fatal warnings (e.g., deny list hits)",
-                "oneOf": [
-                    {
-                        "type": "string",
-                        "pattern": "^deny_list:[A-Za-z0-9_\\-]+$"
-                    }
-                ]
+                "type": "object",
+                "example": {
+                    "email": "user@example.com"
+                }
             },
             "ListOutcome": {
-                "description": "Outcome for a single configured list.",
                 "required": [
                     "name",
                     "humanName",
-                    "typ",
+                    "type",
                     "checkType",
                     "matched"
                 ],
                 "properties": {
                     "name": {
-                        "description": "Technical list identifier",
-                        "type": "string"
+                        "type": "string",
+                        "example": "deny_disposable"
                     },
                     "humanName": {
-                        "description": "Display name",
-                        "type": "string"
+                        "type": "string",
+                        "example": "Disposable domains"
                     },
-                    "typ": {
+                    "type": {
                         "type": "string",
                         "enum": [
                             "allow",
                             "deny"
-                        ]
+                        ],
+                        "example": "deny"
                     },
                     "checkType": {
                         "type": "string",
                         "enum": [
                             "domain",
                             "address"
-                        ]
+                        ],
+                        "example": "domain"
                     },
                     "matched": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "example": false
                     },
                     "matchedValue": {
-                        "description": "Matched domain or address",
                         "type": "string",
+                        "example": null,
                         "nullable": true
                     }
                 },
                 "type": "object"
             },
-            "Corrections": {
-                "properties": {
-                    "normalized": {
-                        "description": "Lowercased domain, IDNA ASCII",
-                        "type": "string",
-                        "nullable": true
-                    },
-                    "suggestion": {
-                        "description": "Suggested fix for common domain typos",
-                        "type": "string",
-                        "nullable": true
-                    }
-                },
-                "type": "object"
-            },
-            "SimpleResults": {
-                "required": [
-                    "formatValid",
-                    "isSendable",
-                    "hasWarnings"
-                ],
-                "properties": {
-                    "formatValid": {
-                        "description": "Format validity only (syntax/structure)",
-                        "type": "boolean"
-                    },
-                    "isSendable": {
-                        "description": "Deliverability prediction: true only if domain resolves and MX exists",
-                        "type": "boolean"
-                    },
-                    "hasWarnings": {
-                        "description": "True if any non-fatal warnings present",
-                        "type": "boolean"
-                    }
-                },
-                "type": "object"
-            },
-            "DnsResult": {
-                "properties": {
-                    "domainExists": {
-                        "description": "Domain has A/AAAA records (null if not checked)",
-                        "type": "boolean",
-                        "nullable": true
-                    },
-                    "hasMx": {
-                        "description": "Domain has MX records (null if not checked)",
-                        "type": "boolean",
-                        "nullable": true
-                    }
-                },
-                "type": "object"
-            },
-            "EmailValidationResponse": {
-                "description": "Validation outcome with format, deliverability, warnings and list matches.",
-                "required": [
-                    "simpleResults",
-                    "reasons",
-                    "warnings",
-                    "corrections",
-                    "dns",
-                    "lists"
-                ],
+            "ValidationResult": {
                 "properties": {
                     "query": {
-                        "description": "Input email as received (trimmed)",
                         "type": "string",
+                        "example": "User+tag@Straße.de",
                         "nullable": true
                     },
                     "corrections": {
-                        "$ref": "#/components/schemas/Corrections"
+                        "properties": {
+                            "normalized": {
+                                "type": "string",
+                                "example": "User+tag@strasse.de",
+                                "nullable": true
+                            },
+                            "suggestion": {
+                                "type": "string",
+                                "example": null,
+                                "nullable": true
+                            }
+                        },
+                        "type": "object"
                     },
                     "simpleResults": {
-                        "$ref": "#/components/schemas/SimpleResults"
+                        "properties": {
+                            "formatValid": {
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "isSendable": {
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "hasWarnings": {
+                                "type": "boolean",
+                                "example": false
+                            }
+                        },
+                        "type": "object"
                     },
                     "reasons": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/Reason"
-                        }
+                            "type": "string"
+                        },
+                        "example": []
                     },
                     "warnings": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/components/schemas/Warning"
-                        }
+                            "type": "string"
+                        },
+                        "example": []
                     },
                     "dns": {
-                        "$ref": "#/components/schemas/DnsResult"
+                        "properties": {
+                            "domainExists": {
+                                "type": "boolean",
+                                "example": true,
+                                "nullable": true
+                            },
+                            "hasMx": {
+                                "type": "boolean",
+                                "example": true,
+                                "nullable": true
+                            }
+                        },
+                        "type": "object"
                     },
                     "lists": {
-                        "description": "Per-list outcomes based on configured lists.ini",
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/ListOutcome"
                         }
                     }
                 },
-                "type": "object"
+                "type": "object",
+                "example": {
+                    "query": "User+tag@Straße.de",
+                    "corrections": {
+                        "normalized": "User+tag@strasse.de",
+                        "suggestion": null
+                    },
+                    "simpleResults": {
+                        "formatValid": true,
+                        "isSendable": true,
+                        "hasWarnings": false
+                    },
+                    "reasons": [],
+                    "warnings": [],
+                    "dns": {
+                        "domainExists": true,
+                        "hasMx": true
+                    },
+                    "lists": [
+                        {
+                            "name": "deny_disposable",
+                            "humanName": "Disposable domains",
+                            "type": "deny",
+                            "checkType": "domain",
+                            "matched": false,
+                            "matchedValue": null
+                        }
+                    ]
+                }
+            },
+            "ErrorResponse": {
+                "required": [
+                    "error"
+                ],
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "example": "Use application/json"
+                    }
+                },
+                "type": "object",
+                "example": {
+                    "error": "Bad request"
+                }
+            },
+            "HealthResponse": {
+                "required": [
+                    "status"
+                ],
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "ok"
+                    }
+                },
+                "type": "object",
+                "example": {
+                    "status": "ok"
+                }
             }
         }
     },
     "tags": [
         {
-            "name": "Validation",
-            "description": "Email validation endpoints"
+            "name": "meta",
+            "description": "meta"
+        },
+        {
+            "name": "validation",
+            "description": "validation"
         }
     ]
 }
