@@ -37,6 +37,7 @@ final class ValidationResult implements
 
     private ?string $normalized = null;
     private ?string $suggestion = null;
+    private ?float $suggestionScore = null;
     private ?bool $domainExists = null;
     private ?bool $hasMx = null;
 
@@ -143,6 +144,12 @@ final class ValidationResult implements
         return $this;
     }
 
+    public function setSuggestionScore(?float $score): self
+    {
+        $this->suggestionScore = $score;
+        return $this;
+    }
+
     /**
      * Set DNS check results
      *
@@ -240,6 +247,11 @@ final class ValidationResult implements
         return $this->suggestion;
     }
 
+    public function getSuggestionScore(): ?float
+    {
+        return $this->suggestionScore;
+    }
+
     /** Get whether the domain exists (DNS check)
      *
      * @return ?bool True if the domain exists, false if not, null if not checked
@@ -283,7 +295,8 @@ final class ValidationResult implements
      *   query: ?string,
      *   corrections: array{
      *      normalized:?string,
-     *      suggestion:?string
+     *      suggestion:?string,
+     *      suggestionScore:?float
      *   },
      *   simpleResults: array{
      *      formatValid:bool,
@@ -304,8 +317,9 @@ final class ValidationResult implements
         return [
             'query'       => $this->getQuery(),
             'corrections' => [
-                'normalized' => $this->getNormalized(),
-                'suggestion' => $this->getSuggestion(),
+                'normalized'      => $this->getNormalized(),
+                'suggestion'      => $this->getSuggestion(),
+                'suggestionScore' => $this->getSuggestionScore(),
             ],
             'simpleResults' => [
                 'formatValid' => $this->isValid(),

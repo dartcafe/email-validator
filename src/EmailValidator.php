@@ -7,6 +7,7 @@ namespace Dartcafe\EmailValidator;
 use Dartcafe\EmailValidator\Contracts\DnsResolver;
 use Dartcafe\EmailValidator\Contracts\DomainSuggestionProvider;
 use Dartcafe\EmailValidator\Contracts\ListProvider;
+use Dartcafe\EmailValidator\Contracts\ScoredDomainSuggestionProvider;
 use Dartcafe\EmailValidator\Contracts\Validator;
 use Dartcafe\EmailValidator\Dns\DefaultDnsResolver;
 use Dartcafe\EmailValidator\Suggestion\TextDomainSuggestionProvider;
@@ -82,11 +83,29 @@ final class EmailValidator implements Validator
 
         // Domain typo suggestion (even if format issues exist)
         if ($normalizedDomain !== '') {
-            $replacement = $this->suggestions->suggestDomain($normalizedDomain);
-            if ($replacement !== null && $replacement !== $normalizedDomain) {
-                $result->setSuggestion($local . '@' . $replacement);
+            $suggestion = null;
+            $score = null;
+
+            if ($this->suggestions instanceof ScoredDomainSuggestionProvider) {
+                $scored = $this->suggestions->suggestDomainScored($normalizedDomain);
+                if ($scored !== null && $scored->domain !== $normalizedDomain) {
+                    $suggestion = $local . '@' . $scored->domain;
+                    $score = $scored->score; // 0..1
+                }
+            } else {
+                // backward compat: plain provider → compute score locally
+                $replacement = $this->suggestions->suggestDomain($normalizedDomain);
+                if ($replacement !== null && $replacement !== $normalizedDomain) {
+                    $suggestion = $local . '@' . $replacement;
+                    $score = self::computeSuggestionScore($normalizedDomain, strtolower($replacement));
+                }
+            }
+
+            if ($suggestion !== null) {
+                $result->setSuggestion($suggestion)->setSuggestionScore($score);
             }
         }
+
 
         if (!empty($formatReasons)) {
             return $result
@@ -103,16 +122,6 @@ final class EmailValidator implements Validator
             $result->addReason('domain_not_found');
         } elseif ($hasMx === false) {
             $result->addReason('no_mx');
-        }
-
-        if ($this->lists !== null) {
-            $lists = $this->lists->evaluate(strtolower($normalized), $normalizedDomain);
-            $result->setLists($lists);
-            foreach ($lists as $o) {
-                if ($o->type === 'deny' && $o->matched) {
-                    $result->addWarning('deny_list:' . $o->name);
-                }
-            }
         }
 
         // Lists -> warnings (do not affect sendability)
@@ -141,5 +150,13 @@ final class EmailValidator implements Validator
             return $ascii !== false ? $ascii : $domain;
         }
         return $domain;
+    }
+    /** Compute a normalized 0..1 score from edit distance. */
+    private static function computeSuggestionScore(string $a, string $b): float
+    {
+        $dist = \levenshtein($a, $b);
+        $den  = max(\strlen($a), \strlen($b), 1);
+        $score = 1.0 - ($dist / $den);
+        return max(0.0, min(1.0, $score));
     }
 }
