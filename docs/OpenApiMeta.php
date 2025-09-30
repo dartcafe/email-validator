@@ -8,7 +8,7 @@ use OpenApi\Attributes as OA;
 
 #[OA\OpenApi(
     info: new OA\Info(
-        version: '0.1.1',
+        version: '0.1.3',
         title: 'Email Validator API',
         description: 'Validates email format, predicts sendability, and warns on configured deny-lists.',
     ),

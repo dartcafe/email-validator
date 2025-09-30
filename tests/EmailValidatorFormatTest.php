@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Dartcafe\EmailValidator\Contracts\DomainSuggestionProvider;
 use Dartcafe\EmailValidator\EmailValidator;
+use Dartcafe\EmailValidator\Suggestion\ArrayDomainSuggestionProvider;
 use PHPUnit\Framework\TestCase;
 
 final class EmailValidatorFormatTest extends TestCase
@@ -27,6 +28,13 @@ final class EmailValidatorFormatTest extends TestCase
         $this->assertFalse($res->isValid());
         $this->assertContains('missing_at', $res->getReasons());
         $this->assertNull($res->getNormalized());
+    }
+
+    public function testSuggestsGmail(): void
+    {
+        $p = new ArrayDomainSuggestionProvider(['gmail.com','yahoo.com']);
+        $this->assertSame('gmail.com', $p->suggestDomain('gamil.com'));
+        $this->assertSame('gmail.com', $p->suggestDomain('gmil.com'));
     }
 
     public function testSuggestionFromProvider(): void
