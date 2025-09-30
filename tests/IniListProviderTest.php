@@ -82,7 +82,7 @@ INI;
                 // Resolve relatively to INI file
                 $rel  = str_replace(['\\','/'], \DIRECTORY_SEPARATOR, $file);
                 if (\str_starts_with($rel, 'config' . \DIRECTORY_SEPARATOR)) {
-                    $rel = \substr($rel, 7); // "config/" kappen
+                    $rel = \substr($rel, 7);
                 }
                 $full = $base . \DIRECTORY_SEPARATOR . ltrim($rel, \DIRECTORY_SEPARATOR);
                 if (\is_file($full)) {

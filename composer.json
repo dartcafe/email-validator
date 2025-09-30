@@ -3,6 +3,11 @@
   "description": "Lightweight email address validation library with optional REST API.",
   "type": "library",
   "license": "MIT",
+  "authors": [
+    {
+      "name": "René Gieling"
+    }
+  ],
   "keywords": [
     "email",
     "validator",
