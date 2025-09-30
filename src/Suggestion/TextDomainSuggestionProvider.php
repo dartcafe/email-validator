@@ -14,20 +14,32 @@ use Dartcafe\EmailValidator\Value\SuggestedDomain;
 final class TextDomainSuggestionProvider implements DomainSuggestionProvider, ScoredDomainSuggestionProvider
 {
     private DomainSuggestionProvider $engine;
+    private string $metric;
 
-    private function __construct(DomainSuggestionProvider $engine)
+    private function __construct(DomainSuggestionProvider $engine, string $metric)
     {
-        $this->engine = $engine;
+        $this->engine  = $engine;
+        $this->metric  = Distance::isValid($metric) ? $metric : Distance::LEVENSHTEIN;
     }
 
-    public static function default(): self
+    public static function default(string $metric = Distance::LEVENSHTEIN): self
     {
         // keep your default list here
         $defaults = [
             'gmail.com','yahoo.com','outlook.com','hotmail.com','live.com',
             'icloud.com','gmx.de','web.de','t-online.de','proton.me',
         ];
-        return new self(new ArrayDomainSuggestionProvider($defaults));
+        $engine = new ArrayDomainSuggestionProvider($defaults, null, $metric);
+        return new self($engine, $metric);
+    }
+
+    /**
+     * Convenience to build from a custom list
+     * @psalm-suppress PossiblyUnusedMethod */
+    public static function fromArray(iterable $domains, string $metric = Distance::LEVENSHTEIN): self
+    {
+        $engine = new ArrayDomainSuggestionProvider($domains, null, $metric);
+        return new self($engine, $metric);
     }
 
     public function suggestDomain(string $domain): ?string
@@ -51,11 +63,8 @@ final class TextDomainSuggestionProvider implements DomainSuggestionProvider, Sc
             $ascii  = \idn_to_ascii($needle, 0);
             $needle = $ascii !== false ? $ascii : $needle;
         }
-        $best = strtolower($s);
-        $dist = \levenshtein($needle, $best);
-        $den  = max(\strlen($needle), \strlen($best), 1);
-        $score = 1.0 - ($dist / $den);
-        $score = max(0.0, min(1.0, $score));
+        $best  = \strtolower($s);
+        $score = StringDistance::normalizedScore($needle, $best, $this->metric);
         return new SuggestedDomain($s, $score);
     }
 }

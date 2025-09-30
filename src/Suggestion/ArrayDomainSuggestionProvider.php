@@ -12,18 +12,22 @@ final class ArrayDomainSuggestionProvider implements ScoredDomainSuggestionProvi
 {
     /** @var list<string> */
     private array $domains = [];
-
     private ?DomainSuggestionProvider $fallback;
+    private string $metric;
 
     /**
      * @param iterable<mixed> $domains
      */
-    public function __construct(iterable $domains, ?DomainSuggestionProvider $fallback = null)
-    {
+    public function __construct(
+        iterable $domains,
+        ?DomainSuggestionProvider $fallback = null,
+        string $metric = Distance::LEVENSHTEIN,
+    ) {
         /** @var list<string> $list */
         $list = self::normalize($domains);
         $this->domains  = $list;
         $this->fallback = $fallback;
+        $this->metric   = Distance::isValid($metric) ? $metric : Distance::LEVENSHTEIN;
     }
 
     /** @param iterable<mixed> $domains @return list<string> */
@@ -49,8 +53,8 @@ final class ArrayDomainSuggestionProvider implements ScoredDomainSuggestionProvi
     public function suggestDomainScored(string $domain): ?SuggestedDomain
     {
         $needle = strtolower($domain);
-        if (\function_exists('idn_to_ascii')) {
-            $ascii  = \idn_to_ascii($needle, 0);
+        if (function_exists('idn_to_ascii')) {
+            $ascii  = idn_to_ascii($needle, 0);
             $needle = $ascii !== false ? $ascii : $needle;
         }
         if ($needle === '' || $this->domains === []) {
@@ -60,9 +64,9 @@ final class ArrayDomainSuggestionProvider implements ScoredDomainSuggestionProvi
         }
 
         $best = null;
-        $bestDist = PHP_INT_MAX;
+        $bestDist = \PHP_INT_MAX;
         foreach ($this->domains as $cand) {
-            $dist = \levenshtein($needle, $cand);
+            $dist = StringDistance::distance($needle, $cand, $this->metric);
             if ($dist < $bestDist) {
                 $bestDist = $dist;
                 $best = $cand;
@@ -73,7 +77,7 @@ final class ArrayDomainSuggestionProvider implements ScoredDomainSuggestionProvi
         }
 
         // same acceptance threshold as before (length-dependent)
-        $len = max(\strlen($needle), 1);
+        $len = max(strlen($needle), 1);
         $threshold = ($len <= 5) ? 1 : (($len <= 10) ? 2 : 3);
 
         if ($best === null || $bestDist > $threshold) {
@@ -82,11 +86,7 @@ final class ArrayDomainSuggestionProvider implements ScoredDomainSuggestionProvi
                 : null;
         }
 
-        // normalized score: 1 - (dist / max(len))
-        $den = max(\strlen($needle), \strlen($best), 1);
-        $score = 1.0 - ($bestDist / $den);
-        $score = max(0.0, min(1.0, $score));
-
+        $score = StringDistance::normalizedScore($needle, $best, $this->metric);
         return new SuggestedDomain($best, $score);
     }
 }

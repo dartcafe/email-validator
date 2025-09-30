@@ -10,6 +10,8 @@ use Dartcafe\EmailValidator\Contracts\ListProvider;
 use Dartcafe\EmailValidator\Contracts\ScoredDomainSuggestionProvider;
 use Dartcafe\EmailValidator\Contracts\Validator;
 use Dartcafe\EmailValidator\Dns\DefaultDnsResolver;
+use Dartcafe\EmailValidator\Suggestion\Distance;
+use Dartcafe\EmailValidator\Suggestion\StringDistance;
 use Dartcafe\EmailValidator\Suggestion\TextDomainSuggestionProvider;
 use Dartcafe\EmailValidator\Value\ValidationResult;
 
@@ -18,12 +20,15 @@ final class EmailValidator implements Validator
     private DomainSuggestionProvider $suggestions;
     private ?ListProvider $lists;
     private DnsResolver $dns;
+    private string $distanceMetric;
 
     public function __construct(
         ?DomainSuggestionProvider $suggestions = null,
         ?ListProvider $lists = null,
         ?DnsResolver $dns = null,
+        string $distanceMetric = Distance::LEVENSHTEIN,
     ) {
+        $this->distanceMetric = Distance::isValid($distanceMetric) ? $distanceMetric : Distance::LEVENSHTEIN;
         $this->suggestions = $suggestions ?? TextDomainSuggestionProvider::default();
         $this->lists       = $lists;
         $this->dns         = $dns ?? new DefaultDnsResolver();
@@ -90,14 +95,13 @@ final class EmailValidator implements Validator
                 $scored = $this->suggestions->suggestDomainScored($normalizedDomain);
                 if ($scored !== null && $scored->domain !== $normalizedDomain) {
                     $suggestion = $local . '@' . $scored->domain;
-                    $score = $scored->score; // 0..1
+                    $score = $scored->score;
                 }
             } else {
-                // backward compat: plain provider → compute score locally
                 $replacement = $this->suggestions->suggestDomain($normalizedDomain);
                 if ($replacement !== null && $replacement !== $normalizedDomain) {
                     $suggestion = $local . '@' . $replacement;
-                    $score = self::computeSuggestionScore($normalizedDomain, strtolower($replacement));
+                    $score = StringDistance::normalizedScore($normalizedDomain, \strtolower($replacement), $this->distanceMetric);
                 }
             }
 
@@ -150,13 +154,5 @@ final class EmailValidator implements Validator
             return $ascii !== false ? $ascii : $domain;
         }
         return $domain;
-    }
-    /** Compute a normalized 0..1 score from edit distance. */
-    private static function computeSuggestionScore(string $a, string $b): float
-    {
-        $dist = \levenshtein($a, $b);
-        $den  = max(\strlen($a), \strlen($b), 1);
-        $score = 1.0 - ($dist / $den);
-        return max(0.0, min(1.0, $score));
     }
 }
