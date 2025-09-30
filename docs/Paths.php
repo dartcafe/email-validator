@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Dartcafe\EmailValidator\Docs;
@@ -16,11 +17,13 @@ final class Paths
             new OA\Response(
                 response: 200,
                 description: 'Service is alive',
-                content: new OA\JsonContent(ref: '#/components/schemas/HealthResponse')
+                content: new OA\JsonContent(ref: '#/components/schemas/HealthResponse'),
             ),
-        ]
+        ],
     )]
-    public function health(): void {}
+    public function health(): void
+    {
+    }
 
     #[OA\Get(
         path: '/validate',
@@ -32,23 +35,25 @@ final class Paths
                 name: 'email',
                 required: true,
                 description: 'Email address to validate',
-                schema: new OA\Schema(type: 'string', format: 'email')
-            )
+                schema: new OA\Schema(type: 'string', format: 'email'),
+            ),
         ],
         responses: [
             new OA\Response(
                 response: 200,
                 description: 'Validation result',
-                content: new OA\JsonContent(ref: '#/components/schemas/ValidationResult')
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationResult'),
             ),
             new OA\Response(
                 response: 400,
                 description: 'Bad request',
-                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
             ),
-        ]
+        ],
     )]
-    public function validateGet(): void {}
+    public function validateGet(): void
+    {
+    }
 
     #[OA\Post(
         path: '/validate',
@@ -57,20 +62,22 @@ final class Paths
         summary: 'Validate an email (JSON body)',
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/EmailValidationRequest')
+            content: new OA\JsonContent(ref: '#/components/schemas/EmailValidationRequest'),
         ),
         responses: [
             new OA\Response(
                 response: 200,
                 description: 'Validation result',
-                content: new OA\JsonContent(ref: '#/components/schemas/ValidationResult')
+                content: new OA\JsonContent(ref: '#/components/schemas/ValidationResult'),
             ),
             new OA\Response(
                 response: 415,
                 description: 'Unsupported Media Type',
-                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')
+                content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse'),
             ),
-        ]
+        ],
     )]
-    public function validatePost(): void {}
+    public function validatePost(): void
+    {
+    }
 }

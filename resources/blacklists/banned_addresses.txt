@@ -1,5 +1,0 @@
-# Banned addresses trigger a warning
-# Configure in lists.ini
-# one email address per line (case-insensitive)
-ceo@example.com
-test@company.local

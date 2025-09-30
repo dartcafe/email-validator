@@ -1,7 +1,0 @@
-# List with known domains used as disposable email domains
-# Configure in lists.ini
-# consider regulary updates i.e. by https://github.com/disposable-email-domains/disposable-email-domains/
-# one domain per line
-mailinator.com
-tempmail.net
-10minutemail.com

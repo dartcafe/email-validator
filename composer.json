@@ -22,7 +22,8 @@
   },
   "autoload-dev": {
     "classmap": [
-      "docs/"
+      "docs/",
+      "tests/"
     ]
   },
   "require": {

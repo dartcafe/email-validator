@@ -1,3 +1,0 @@
-# other restricted domains
-# one address per line
-foo.com
