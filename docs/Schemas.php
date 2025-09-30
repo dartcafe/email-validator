@@ -47,7 +47,7 @@ final class ListOutcome
             properties: [
                 new OA\Property(property: 'normalized', type: 'string', nullable: true, example: 'User+tag@strasse.de'),
                 new OA\Property(property: 'suggestion', type: 'string', nullable: true, example: null),
-                new OA\Property(property: "suggestionScore", type: "number", format: "float", nullable: true, example: 0.92),
+                new OA\Property(property: 'suggestionScore', type: 'number', format: 'float', nullable: true, example: 0.92),
             ],
         ),
         new OA\Property(
