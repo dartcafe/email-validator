@@ -5,26 +5,28 @@ declare(strict_types=1);
 namespace Dartcafe\EmailValidator\Suggestion;
 
 use Dartcafe\EmailValidator\Contracts\DomainSuggestionProvider;
+use Dartcafe\EmailValidator\Contracts\ScoredDomainSuggestionProvider;
+use Dartcafe\EmailValidator\Value\SuggestedDomain;
 
-final class ArrayDomainSuggestionProvider implements DomainSuggestionProvider
+final class ArrayDomainSuggestionProvider implements ScoredDomainSuggestionProvider
 {
     /** @var list<string> */
     private array $domains = [];
+
     private ?DomainSuggestionProvider $fallback;
 
     /**
-     * @param iterable<mixed> $domains  list of domains (lowercase preferred)
+     * @param iterable<mixed> $domains
      */
     public function __construct(iterable $domains, ?DomainSuggestionProvider $fallback = null)
     {
-        $this->domains  = self::normalize($domains);
+        /** @var list<string> $list */
+        $list = self::normalize($domains);
+        $this->domains  = $list;
         $this->fallback = $fallback;
     }
 
-    /**
-     * @param iterable<mixed> $domains
-     * @return list<string>
-     */
+    /** @param iterable<mixed> $domains @return list<string> */
     private static function normalize(iterable $domains): array
     {
         $out = [];
@@ -34,12 +36,17 @@ final class ArrayDomainSuggestionProvider implements DomainSuggestionProvider
                 $out[] = $s;
             }
         }
-        /** @var list<string> $uniq */
-        $uniq = array_values(array_unique($out));
-        return $uniq;
+        /** @var list<string> $unique */
+        $unique = array_values(array_unique($out));
+        return $unique;
     }
 
     public function suggestDomain(string $domain): ?string
+    {
+        return $this->suggestDomainScored($domain)?->domain;
+    }
+
+    public function suggestDomainScored(string $domain): ?SuggestedDomain
     {
         $needle = strtolower($domain);
         if (\function_exists('idn_to_ascii')) {
@@ -47,7 +54,9 @@ final class ArrayDomainSuggestionProvider implements DomainSuggestionProvider
             $needle = $ascii !== false ? $ascii : $needle;
         }
         if ($needle === '' || $this->domains === []) {
-            return $this->fallback?->suggestDomain($domain);
+            return ($this->fallback instanceof ScoredDomainSuggestionProvider)
+                ? $this->fallback->suggestDomainScored($domain)
+                : null;
         }
 
         $best = null;
@@ -62,11 +71,22 @@ final class ArrayDomainSuggestionProvider implements DomainSuggestionProvider
                 }
             }
         }
+
+        // same acceptance threshold as before (length-dependent)
         $len = max(\strlen($needle), 1);
         $threshold = ($len <= 5) ? 1 : (($len <= 10) ? 2 : 3);
 
-        return ($best !== null && $bestDist <= $threshold)
-            ? $best
-            : $this->fallback?->suggestDomain($domain);
+        if ($best === null || $bestDist > $threshold) {
+            return ($this->fallback instanceof ScoredDomainSuggestionProvider)
+                ? $this->fallback->suggestDomainScored($domain)
+                : null;
+        }
+
+        // normalized score: 1 - (dist / max(len))
+        $den = max(\strlen($needle), \strlen($best), 1);
+        $score = 1.0 - ($bestDist / $den);
+        $score = max(0.0, min(1.0, $score));
+
+        return new SuggestedDomain($best, $score);
     }
 }
