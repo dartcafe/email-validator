@@ -57,6 +57,11 @@
     "cs": "php-cs-fixer fix --diff --dry-run --verbose",
     "cs:fix": "php-cs-fixer fix",
     "psalm": "psalm",
+    "oa": [
+      "@swagger-ui:fetch",
+      "@openapi:generate",
+      "@openapi:generate:yaml"
+    ],
     "swagger-ui:fetch": [
       "@php -r \"if(!is_dir('public/vendor/swagger-ui')) mkdir('public/vendor/swagger-ui', 0777, true);\"",
       "bash -lc 'SWAGGER_UI_VERSION=5.11.0; curl -L https://registry.npmjs.org/swagger-ui-dist/-/swagger-ui-dist-$SWAGGER_UI_VERSION.tgz | tar -xz --strip-components=1 -C public/vendor/swagger-ui'"

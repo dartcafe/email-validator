@@ -1,8 +1,8 @@
 # Email Validator for PHP
 
-Robust email validation for modern PHP.
+A small, framework‑agnostic PHP library to validate email addresses with.
 
-The **Email Validator** separates **format validity** from **deliverability**, supports **domain typo suggestions**, and lets you plug in custom **providers** for lists and DNS. File/INI list handling is offered via a small adapter.
+Separates **format validity** from **deliverability**, supports **domain typo suggestions**, and lets you plug in custom **providers** for lists and DNS. File/INI list handling is offered via a small adapter.
 
 ---
 
@@ -10,10 +10,10 @@ The **Email Validator** separates **format validity** from **deliverability**, s
 
 - **Format-only validity** (`valid`) — syntax & RFC length checks plus basic domain shape.
 - **Deliverability prediction** (`sendable`) — DNS: domain existence + MX records (via pluggable resolver).
-- **Domain typo suggestions** — configurable provider with a sensible default list.
+- **Domain suggestions** with typo‑distance scoring (Levenshtein or Damerau–Levenshtein)
 - **Pluggable list checks** — allow/deny by domain or full address via a `ListProvider`.
 - **Clear result model** — typed getters for PHP and compact JSON for APIs.
-- **OpenAPI 3** — attribute-based spec; optional Swagger UI in the demo.
+- A clean, typed **`ValidationResult`** DTO and an optional **OpenAPI** spec for a tiny REST endpoint
 - **PHP 8.1+**, Psalm-typed, PHPUnit-tested, PSR-12 styled.
 
 ---
@@ -28,44 +28,44 @@ composer require dartcafe/email-validator
 
 ---
 
-## Quick start (with INI + text files)
-
-The core is file-system agnostic. If you want INI + text files, use the included adapter.
+## Quick start
 
 ```php
 <?php
 
 use Dartcafe\EmailValidator\EmailValidator;
-use Dartcafe\EmailValidator\Adapter\IniListProvider;
+use Dartcafe\EmailValidator\Suggestion\TextDomainSuggestionProvider;
 
-// Optional: lists via INI + text files (one value per line)
-$lists = is_file(__DIR__ . '/config/lists.ini')
-    ? IniListProvider::fromFile(__DIR__ . '/config/lists.ini')
-    : null;
+// Create a validator with default providers
+$validator = new EmailValidator(
+    suggestions: TextDomainSuggestionProvider::default() // common domains bundled
+);
 
-// Create validator (default typo suggestions included)
-$validator = new EmailValidator(lists: $lists);
+// Validate an address
+$result = $validator->validate('ceo@gamil.com');
 
-// Validate
-$result = $validator->validate('User+tag@Straße.de');
-
-// Work with the result
-if ($result->isValid()) {
-    $sendable   = $result->isSendable();   // DNS + MX OK?
-    $normalized = $result->getNormalized(); // local@ascii-domain (domain lowercased)
-    $suggestion = $result->getSuggestion(); // correction (if any)
-    $reasons    = $result->getReasons();    // format/DNS reasons
-    $warnings   = $result->getWarnings();   // e.g. deny-list hits
-}
+// Access the structured result
+$result->isValid();             // format-only validity (bool)
+$result->isSendable();          // domain has A/AAAA and MX (bool)
+$result->getReasons();          // list<string> format/DNS reasons
+$result->getWarnings();         // list<string> (e.g. deny_list:<name>)
+$result->getNormalized();       // ascii-lower-cased domain, same local part
+$result->getSuggestion();       // suggested corrected address or null
+$result->getSuggestionScore();  // 0.0–1.0 confidence score or null
+$result->getDomainExists();     // ?bool
+$result->getHasMx();            // ?bool
+$result->getLists();            // list<ListOutcome>
 ```
 
-### JSON shape (example)
+Example JSON (via `json_encode($result)`):
+
 ```json
 {
-  "query": "User+tag@Straße.de",
+  "query": "ceo@gamil.com",
   "corrections": {
-    "normalized": "User+tag@strasse.de",
-    "suggestion": null
+    "normalized": "ceo@gmail.com",
+    "suggestion": "ceo@gmail.com",
+    "suggestionScore": 0.92
   },
   "simpleResults": {
     "formatValid": true,
@@ -74,142 +74,126 @@ if ($result->isValid()) {
   },
   "reasons": [],
   "warnings": [],
-  "dns": {
-    "domainExists": true,
-    "hasMx": true
-  },
-  "lists": [
-    {
-      "name": "deny_disposable",
-      "humanName": "Disposable domains",
-      "type": "deny",
-      "checkType": "domain",
-      "matched": false,
-      "matchedValue": null
-    }
-  ]
+  "dns": { "domainExists": true, "hasMx": true },
+  "lists": []
 }
 ```
 
-> **Terminology**
-> - `valid` — only the **syntax/format** aspect.
-> - `sendable` — format OK **and** DNS suggests deliverability (domain exists & MX present).
-> - `warnings` — informative (e.g. deny-list hit); they do **not** flip `sendable`.
-
 ---
 
-## Lists via INI + text files
+## Domain suggestions & distance metrics
 
-**`config/lists.ini`**
-```ini
-[deny_disposable]
-type = "deny"
-listFileName = "lists/disposable_domains.txt"
-checkType = "domain"
-listName = "deny_disposable"
-humanName = "Disposable domains"
-
-[allow_vip_customers]
-type = "allow"
-listFileName = "lists/vip_addresses.txt"
-checkType = "address"
-listName = "allow_vip"
-humanName = "VIP customers"
-```
-
-**`config/lists/disposable_domains.txt`**
-```
-# one domain per line (case-insensitive)
-mailinator.com
-tempmail.org
-```
-
-**`config/lists/vip_addresses.txt`**
-```
-# one address per line (case-insensitive)
-vip.customer@example.com
-ceo@example.com
-```
-
-Load with:
+By default the validator uses a curated set of popular domains and **Levenshtein** distance.
+You can provide your own list and choose **Damerau–Levenshtein**:
 
 ```php
-use Dartcafe\EmailValidator\Adapter\IniListProvider;
+use Dartcafe\EmailValidator\Suggestion\ArrayDomainSuggestionProvider;
+use Dartcafe\EmailValidator\Suggestion\Distance;
 
-$lists = IniListProvider::fromFile(__DIR__ . '/config/lists.ini');
-$validator = new EmailValidator(lists: $lists);
+// Provide your own candidate domains:
+$domains = ['gmail.com', 'yahoo.com', 'outlook.com'];
+
+// Choose the metric (LEVENSHTEIN | DAMERAU_LEVENSHTEIN)
+$suggestions = ArrayDomainSuggestionProvider::fromArray($domains, Distance::DAMERAU_LEVENSHTEIN);
+
+$validator = new EmailValidator(suggestions: $suggestions);
+$res = $validator->validate('user@gmil.com');
+
+$res->getSuggestion();       // "user@gmail.com"
+$res->getSuggestionScore();  // e.g. 0.93
 ```
 
-Each configured section becomes a `ListOutcome` in the result. If a **deny** list matches, a warning like `deny_list:<name>` is added (informational by default).
+The **score** is a normalized similarity in **[0.0, 1.0]**
+(1.0 = identical, ~0.9 strong typo‑fix candidate, <0.5 usually weak).
 
 ---
 
-## Pluggable providers (advanced)
+## Deliverability (DNS)
 
-The validator depends on minimal contracts so you can swap implementations easily.
+Deliverability is **heuristic**: the validator checks MX first, then A/AAAA fallback.
 
-### ListProvider
+- `isSendable()` is `true` only if **domain resolves** *and* **MX exists**.
+- `reasons` may contain `domain_not_found` or `no_mx`.
+
+Custom DNS is possible by implementing:
+
+```php
+namespace Dartcafe\EmailValidator\Contracts;
+
+interface DnsResolver
+{
+    /** @return array{0:?bool,1:?bool} [domainExists, hasMx] */
+    public function check(string $asciiLowerDomain): array;
+}
+```
+
+and passing it into the validator’s constructor.
+
+---
+
+## Lists: allow/deny with a pluggable provider
+
+The library defines a minimal interface:
+
 ```php
 namespace Dartcafe\EmailValidator\Contracts;
 
 use Dartcafe\EmailValidator\Value\ListOutcome;
 
-interface ListProvider {
-    /** @return list<ListOutcome> */
+interface ListProvider
+{
+    /**
+     * @return list<ListOutcome>
+     */
     public function evaluate(string $normalizedAddress, string $normalizedDomain): array;
 }
 ```
 
-### DnsResolver
-```php
-namespace Dartcafe\EmailValidator\Contracts;
+Return `ListOutcome` objects (type: `allow|deny`, `checkType: address|domain`, `matched`, …).
+**Deny matches** are reported as **warnings** (do **not** change `isSendable()`).
 
-/** @return array{0:?bool, 1:?bool} [domainExists, hasMx] */
-interface DnsResolver {
-    public function check(string $asciiLowerDomain): array;
-}
-```
-
-### DomainSuggestionProvider
-```php
-namespace Dartcafe\EmailValidator\Contracts;
-
-interface DomainSuggestionProvider {
-    public function suggestDomain(string $asciiLowerDomain): ?string;
-}
-```
-
-Provide your own implementations and pass them into the constructor:
-
-```php
-$validator = new EmailValidator(
-    suggestions: $mySuggestions,      // implements DomainSuggestionProvider
-    lists:       $myListProvider,     // implements ListProvider
-    dns:         $myDnsResolver       // implements DnsResolver
-);
-```
-
-A default DNS resolver and a default suggestion provider ship with the library.
+You can write your own provider (DB/file/memory).
+A lightweight INI/Text adapter is available in the demo; production apps usually inject their own provider.
 
 ---
 
-## REST & OpenAPI
+## REST endpoint (optional)
 
-The repo includes OpenAPI attribute definitions (`docs/`) to generate `public/openapi.json`. Example:
+The package ships an **OpenAPI** description (`public/openapi.json`) for a tiny REST API:
+
+- `GET /validate?email=...`
+- `POST /validate` with `{"email": "..." }`
+- `GET /health`
+
+You can wire these routes in any micro-router or reuse the demo app.
+
+---
+
+## OpenAPI
+
+- File: `public/openapi.json`
+- Version in spec is kept in sync with releases via `docs/OpenApiConfig.php` and the release script.
+
+Generate (in the lib):
 
 ```bash
-vendor/bin/openapi --bootstrap vendor/autoload.php --format json --output public/openapi.json docs
+composer run openapi:generate
 ```
-
-Endpoints in the spec:
-- `POST /validate` — `{ "email": "user@example.com" }`
-- `GET  /validate?email=user@example.com`
-
-A separate demo app (UI + lists editor + Swagger UI) is available in a companion repository.
 
 ---
 
-## Development
+## Types & DTOs
+
+- `Dartcafe\EmailValidator\Value\ValidationResult` (mutable, JSON‑serializable)
+- `Dartcafe\EmailValidator\Value\ListOutcome`
+- Suggestion types:
+  - `Dartcafe\EmailValidator\Value\SuggestedDomain` (domain + score)
+
+Everything is annotated for Psalm and IDEs.
+
+---
+
+## Quality
 
 ```bash
 # coding standards
@@ -226,5 +210,7 @@ composer test
 ---
 
 ## License
+
+MIT © René Gieling
 
 See [LICENSE](./LICENSE).

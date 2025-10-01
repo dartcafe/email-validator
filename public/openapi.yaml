@@ -1,0 +1,230 @@
+openapi: 3.0.0
+info:
+  title: 'Email Validator API'
+  description: 'Validates email format, predicts sendability, and warns on configured deny-lists.'
+  version: 0.2.0
+servers:
+  -
+    url: /
+paths:
+  /health:
+    get:
+      tags:
+        - meta
+      summary: 'Health probe'
+      operationId: health
+      responses:
+        '200':
+          description: 'Service is alive'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /validate:
+    get:
+      tags:
+        - validation
+      summary: 'Validate an email (query param)'
+      operationId: validateGet
+      parameters:
+        -
+          name: email
+          in: query
+          description: 'Email address to validate'
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: 'Validation result'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '400':
+          description: 'Bad request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - validation
+      summary: 'Validate an email (JSON body)'
+      operationId: validatePost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailValidationRequest'
+      responses:
+        '200':
+          description: 'Validation result'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '415':
+          description: 'Unsupported Media Type'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    EmailValidationRequest:
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+      type: object
+      example:
+        email: user@example.com
+    ListOutcome:
+      required:
+        - name
+        - humanName
+        - type
+        - checkType
+        - matched
+      properties:
+        name:
+          type: string
+          example: deny_disposable
+        humanName:
+          type: string
+          example: 'Disposable domains'
+        type:
+          type: string
+          enum:
+            - allow
+            - deny
+          example: deny
+        checkType:
+          type: string
+          enum:
+            - domain
+            - address
+          example: domain
+        matched:
+          type: boolean
+          example: false
+        matchedValue:
+          type: string
+          example: null
+          nullable: true
+      type: object
+    ValidationResult:
+      properties:
+        query:
+          type: string
+          example: User+tag@Straße.de
+          nullable: true
+        corrections:
+          properties:
+            normalized:
+              type: string
+              example: User+tag@strasse.de
+              nullable: true
+            suggestion:
+              type: string
+              example: null
+              nullable: true
+            suggestionScore:
+              type: number
+              format: float
+              example: 0.92
+              nullable: true
+          type: object
+        simpleResults:
+          properties:
+            formatValid:
+              type: boolean
+              example: true
+            isSendable:
+              type: boolean
+              example: true
+            hasWarnings:
+              type: boolean
+              example: false
+          type: object
+        reasons:
+          type: array
+          items:
+            type: string
+          example: []
+        warnings:
+          type: array
+          items:
+            type: string
+          example: []
+        dns:
+          properties:
+            domainExists:
+              type: boolean
+              example: true
+              nullable: true
+            hasMx:
+              type: boolean
+              example: true
+              nullable: true
+          type: object
+        lists:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListOutcome'
+      type: object
+      example:
+        query: User+tag@Straße.de
+        corrections:
+          normalized: User+tag@strasse.de
+          suggestion: null
+        simpleResults:
+          formatValid: true
+          isSendable: true
+          hasWarnings: false
+        reasons: []
+        warnings: []
+        dns:
+          domainExists: true
+          hasMx: true
+        lists:
+          -
+            name: deny_disposable
+            humanName: 'Disposable domains'
+            type: deny
+            checkType: domain
+            matched: false
+            matchedValue: null
+    ErrorResponse:
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: 'Use application/json'
+      type: object
+      example:
+        error: 'Bad request'
+    HealthResponse:
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          example: ok
+      type: object
+      example:
+        status: ok
+tags:
+  -
+    name: meta
+    description: meta
+  -
+    name: validation
+    description: validation

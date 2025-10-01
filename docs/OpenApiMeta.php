@@ -8,12 +8,12 @@ use OpenApi\Attributes as OA;
 
 #[OA\OpenApi(
     info: new OA\Info(
-        version: '0.1.4',
+        version: '0.2.0',
         title: 'Email Validator API',
         description: 'Validates email format, predicts sendability, and warns on configured deny-lists.',
     ),
     servers: [
-        new OA\Server(url: 'http://localhost:8080'),
+        new OA\Server(url: '/'),
     ],
     tags: [
         new OA\Tag(name: 'Utilities', description: 'Health checks and utilities'),
